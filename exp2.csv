@@ -1,4 +1,4 @@
-laval_id,method,fungus,feeding,f0,f1,f2,f3,f4,survival,censored
+id,method,fungus,feeding,f0,f1,f2,f3,f4,survival,censored
 c029,injection,control,constant,97.84,na,na,na,na,0,1
 c030,injection,control,constant,86.23,93.75,na,na,na,2,1
 c031,injection,control,constant,93.09,83.96,90.06,129.3,125.04,10,0
