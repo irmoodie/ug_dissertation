@@ -71,6 +71,12 @@ survival3 <- exp2 %>%
 
 survival3$feeding_f <- fct_recode(survival3$feeding, "Constant" = "constant", "Enforced anorexia" = "starved")
 
+mass1 <- exp1 %>%
+  select(-survival, -censored, -label)
+
+mass1$mass_diff <- mass1$mass_f-mass1$mass_i
+mass1$f_total <- mass1$f0+mass1$f1+mass1$f2+mass1$f3+mass1$f4
+
 rm(exp1, exp2, exp3) # remove original datasets
 
 # ---- Consumption Plot Exp 1 ----
@@ -236,6 +242,24 @@ ggsave("Survival_Experiment_3.png",
        dpi = "retina",
        width = 5.33,
        height = 3,
+       type = "cairo")
+
+# ---- Mass Plot Exp 1 ----
+
+ggmass1 <- ggplot(data = mass1, aes(x = mass_diff, y = f_total, group = fungus, colour = fungus)) +
+  geom_point(alpha = 0.5) +
+  geom_smooth(method = lm, formula = y~x, alpha = 0.1, linetype = "solid") +
+  scale_color_manual(values=c("#f1a340","#998ec3")) +
+  labs(y = "Total Food Consumption (mg)",
+       x = "Change in larvae mass (mg)") +
+  theme_cowplot() +
+  theme(legend.position = "none")
+
+ggsave("Mass_Experiment_1.png",
+       plot = ggmass1,
+       dpi = "retina",
+       width = 8,
+       height = 8,
        type = "cairo")
 
 # ---- End ----
