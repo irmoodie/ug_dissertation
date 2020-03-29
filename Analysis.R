@@ -22,6 +22,12 @@ exp3 <- read_csv("exp2_effective_f.csv", na = "na") # Modified Exp 2 dataset so 
 
 # ---- Data tidying ----
 
+consump1 <- exp1 %>%
+  gather(key = "day", value = "consumption", f0:f4) %>%
+  separate(day,into=c("junk", "day"),-1) %>% 
+  mutate(day = as.numeric(day)) %>%
+  select(-mass_i, -mass_f, -junk, -survival, -censored)
+
 mass1 <- exp1 %>%
   select(-survival, -censored, -label) # make mass dataset
 
@@ -39,6 +45,39 @@ mass1$f_total <- mass1$f0+mass1$f1+mass1$f2+mass1$f3+mass1$f4 # get total mass o
 
 # ---- Consumption Exp 1 ----
 
+hist(consump1$consumption) # skewed
+hist(log(consump1$consumption)) # log most promising transformation
+
+consump1_lme1 <- lmer(log(consumption)~factor(day)*scale(spore)*fungus+(1|id), data = consump1) # maximum model
+summary(consump1_lme1)
+
+consump1_lme2 <- update(consump1_lme1,~. -factor(day):fungus)
+summary(consump1_lme2)
+
+consump1_lme3 <- update(consump1_lme2,~. -factor(day):scale(spore))
+summary(consump1_lme3)
+
+consump1_lme4 <- update(consump1_lme3,~. -scale(spore):fungus)
+summary(consump1_lme4)
+
+consump1_lme5 <- update(consump1_lme4,~. -fungus)
+summary(consump1_lme5)
+
+consump1_lme6 <- update(consump1_lme5,~. -scale(spore))
+summary(consump1_lme6)
+
+consump1_lme7 <- update(consump1_lme6,~. -factor(day):scale(spore):fungus)
+summary(consump1_lme7)
+
+AICc(consump1_lme1,consump1_lme2,consump1_lme3,consump1_lme4,consump1_lme5,consump1_lme6,consump1_lme7)
+
+plot_model(consump1_lme7, type = "diag") # really not fantasitc, but the data convinces me that there is no effect of fungus or spore anayway
+
+consump1_lme <- consump1_lme7 # save for ease
+rm(consump1_lme1,consump1_lme2,consump1_lme3,consump1_lme4,consump1_lme5,consump1_lme6,consump1_lme7) # clean up
+
+tab_model(consump1_lme, p.val = "kr",
+          file = "model_summaries/Consumption_Exp_1.html") # save model
 
 # ---- Consumption Exp 2 ----
 
@@ -67,4 +106,4 @@ rm(mass1_lm1,mass1_lm2,mass1_lm3) # remove candidate models
 
 tab_model(mass_model,
           p.val = "kr",
-          file = "model_summaries/Mass_Experiment_1.html")
+          file = "model_summaries/Mass_Experiment_1.html") # output as html table
