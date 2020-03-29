@@ -97,6 +97,7 @@ ggconsump1 # show graph
 
 ggsave("Consumption_Experiment_1.png",
        plot = ggconsump1,
+       path = "figs",
        dpi = "retina",
        width = 10,
        height = 8,
@@ -120,6 +121,7 @@ ggconsump2 # show graph (DAY 0 is added after)
 
 ggsave("Consumption_Experiment_2.png",
        plot = ggconsump2,
+       path = "figs",
        dpi = "retina", 
        width = 10,
        height = 4,
@@ -143,6 +145,7 @@ ggconsump3 # show graph
 
 ggsave("Consumption_Experiment_3.png",
        plot = ggconsump2b,
+       path = "figs",
        dpi = "retina",
        width = 6,
        height = 4,
@@ -177,6 +180,7 @@ ggsurv1 # show plot
 
 ggsave("Survival_Experiment_1.png", # export plot
        plot = ggsurv1,
+       path = "figs",
        dpi = "retina",
        width = 10, 
        height = 3,
@@ -208,6 +212,7 @@ ggsurv2 # show plot
 
 ggsave("Survival_Experiment_2.png", # export plot
        plot = ggsurv2,
+       path = "figs",
        dpi = "retina",
        width = 5.33,
        height = 3,
@@ -239,6 +244,7 @@ ggsurv3
 
 ggsave("Survival_Experiment_3.png",
        plot = ggsurv3,
+       path = "figs",
        dpi = "retina",
        width = 5.33,
        height = 3,
@@ -257,6 +263,7 @@ ggmass1 <- ggplot(data = mass1, aes(x = mass_diff, y = f_total, group = fungus, 
 
 ggsave("Mass_Experiment_1.png",
        plot = ggmass1,
+       path = "figs",
        dpi = "retina",
        width = 8,
        height = 8,
