@@ -1,0 +1,1 @@
+Files related to my undergraduate dissertation at the University of Stirling
