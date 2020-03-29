@@ -26,7 +26,14 @@ consump1 <- exp1 %>%
   gather(key = "day", value = "consumption", f0:f4) %>%
   separate(day,into=c("junk", "day"),-1) %>% 
   mutate(day = as.numeric(day)) %>%
-  select(-mass_i, -mass_f, -junk, -survival, -censored)
+  select(-mass_i, -mass_f, -junk, -survival, -censored) # transform consumption data from wide to long format
+
+consump2 <- gather(exp2, key = "day", value = "consumption", f0:f4) %>%
+  separate(day,into=c("junk", "day"),-1) %>% 
+  mutate(day = as.numeric(day)) %>%
+  select(-junk, -survival, -censored) %>%
+  filter(feeding == "constant",
+         day != 4) # wide to long for exp 2, day 4 removed as no values in 1 treatment
 
 mass1 <- exp1 %>%
   select(-survival, -censored, -label) # make mass dataset
@@ -50,37 +57,85 @@ hist(log(consump1$consumption)) # log most promising transformation
 
 consump1_lme1 <- lmer(log(consumption)~factor(day)*scale(spore)*fungus+(1|id), data = consump1) # maximum model
 summary(consump1_lme1)
+plot_model(consump1_lme1, type = "diag")
 
 consump1_lme2 <- update(consump1_lme1,~. -factor(day):fungus)
 summary(consump1_lme2)
+plot_model(consump1_lme2, type = "diag")
 
 consump1_lme3 <- update(consump1_lme2,~. -factor(day):scale(spore))
 summary(consump1_lme3)
+plot_model(consump1_lme3, type = "diag")
 
 consump1_lme4 <- update(consump1_lme3,~. -scale(spore):fungus)
 summary(consump1_lme4)
+plot_model(consump1_lme4, type = "diag")
 
 consump1_lme5 <- update(consump1_lme4,~. -fungus)
 summary(consump1_lme5)
+plot_model(consump1_lme5, type = "diag")
 
 consump1_lme6 <- update(consump1_lme5,~. -scale(spore))
 summary(consump1_lme6)
+plot_model(consump1_lme6, type = "diag")
 
 consump1_lme7 <- update(consump1_lme6,~. -factor(day):scale(spore):fungus)
 summary(consump1_lme7)
+plot_model(consump1_lme7, type = "diag") # really not fantasitc, but the data convinces me that there is no effect of fungus or spore anayway
 
 AICc(consump1_lme1,consump1_lme2,consump1_lme3,consump1_lme4,consump1_lme5,consump1_lme6,consump1_lme7)
-
-plot_model(consump1_lme7, type = "diag") # really not fantasitc, but the data convinces me that there is no effect of fungus or spore anayway
 
 consump1_lme <- consump1_lme7 # save for ease
 rm(consump1_lme1,consump1_lme2,consump1_lme3,consump1_lme4,consump1_lme5,consump1_lme6,consump1_lme7) # clean up
 
-tab_model(consump1_lme, p.val = "kr",
+tab_model(consump1_lme,
+          p.val = "kr",
           file = "model_summaries/Consumption_Exp_1.html") # save model
 
 # ---- Consumption Exp 2 ----
 
+hist(consump2$consumption)
+hist(log(consump2$consumption)) # bit better
+
+consump2_lme1 <- lmer(log(consumption)~factor(day)*method*fungus+(1|id), data = consump2)
+summary(consump2_lme1)
+plot_model(consump2_lme1, type = "diag")
+
+consump2_lme2 <- update(consump2_lme1,~. -factor(day):method:fungus)
+summary(consump2_lme2)
+plot_model(consump2_lme2, type = "diag")
+
+consump2_lme3 <- update(consump2_lme2,~. -factor(day):fungus)
+summary(consump2_lme3)
+plot_model(consump2_lme3, type = "diag")
+
+consump2_lme4 <- update(consump2_lme3,~. -factor(day):method)
+summary(consump2_lme4)
+plot_model(consump2_lme4, type = "diag")
+
+consump2_lme5 <- update(consump2_lme4,~. -fungus:method)
+summary(consump2_lme5)
+plot_model(consump2_lme5, type = "diag")
+
+consump2_lme6 <- update(consump2_lme5,~. -fungus)
+summary(consump2_lme6)
+plot_model(consump2_lme6, type = "diag")
+
+consump2_lme7 <- update(consump2_lme6,~. -method)
+summary(consump2_lme7)
+plot_model(consump2_lme7, type = "diag")
+
+consump2_lme8 <- update(consump2_lme7,~. -factor(day))
+summary(consump2_lme8)
+
+AICc(consump2_lme1,consump2_lme2,consump2_lme3,consump2_lme4,consump2_lme5,consump2_lme6,consump2_lme7,consump2_lme8)
+
+consump2_lme <- consump2_lme1
+rm(consump2_lme1,consump2_lme2,consump2_lme3,consump2_lme4,consump2_lme5,consump2_lme6,consump2_lme7,consump2_lme8)
+
+tab_model(consump2_lme,
+          p.val = "kr",
+          file = "model_summaries/Consumption_Exp_2.html")
 
 # ---- Consumption Exp 3 ----
 
