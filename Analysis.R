@@ -46,6 +46,12 @@ consump2 <- gather(exp2, key = "day", value = "consumption", f0:f4) %>%
   filter(feeding == "constant",
          day != 4) # wide to long for exp 2, day 4 removed as no values in 1 treatment
 
+consump3 <- gather(exp3, key = "day", value = "consumption", f0:f4) %>%
+  separate(day,into=c("junk", "day"),-1) %>% 
+  mutate(day = as.numeric(day)) %>%
+  select(-junk, -survival, -censored) %>%
+  filter(method == "spray", day != 3, day != 4)
+
 mass1 <- exp1 %>%
   select(-survival, -censored, -label) # make mass dataset
 
@@ -71,6 +77,7 @@ summary(cox1.4)
 
 survival1result <- AICc(cox1,cox1.1,cox1.2,cox1.3,cox1.4)
 survival1result <- tibble::rownames_to_column(survival1result, "Model") # add model names
+survival1result$Model <- fct_recode(survival1result$Model,
                           "fungus*spore" = "cox1",
                           "fungus+spore" = "cox1.1",
                           "fungus" = "cox1.2",
