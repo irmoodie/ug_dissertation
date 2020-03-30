@@ -230,9 +230,50 @@ tab_model(consump2_lme,
           file = "model_summaries/Consumption_Exp_2.html")
 
 # ---- Consumption Exp 3 ----
+hist(consump3$consumption)
+hist(log(consump3$consumption))
 
+consump3_lme1 <- lmer(log(consumption)~factor(day)*feeding*fungus+(1|id), data = consump3) # max model
+summary(consump3_lme1) # will try removing 3 way interaction
+plot_model(consump3_lme1, type = "diag") # not amazing but ok
 
+consump3_lme2 <- update(consump3_lme1,~. -factor(day):feeding:fungus)
+summary(consump3_lme2)
+plot_model(consump3_lme2, type = "diag") # not amazing but ok
 
+consump3_lme3 <- update(consump3_lme2,~. -feeding:fungus)
+summary(consump3_lme3)
+plot_model(consump3_lme3, type = "diag")
+
+consump3_lme4 <- update(consump3_lme3,~. -factor(day):fungus)
+summary(consump3_lme4)
+plot_model(consump3_lme4, type = "diag")
+
+consump3_lme5 <- update(consump3_lme4,~. -factor(day):feeding)
+summary(consump3_lme5)
+plot_model(consump3_lme5, type = "diag")
+
+consump3_lme6 <- update(consump3_lme5,~. -feeding)
+summary(consump3_lme6)
+plot_model(consump3_lme6, type = "diag")
+
+consump3_lme7 <- update(consump3_lme6,~. -fungus)
+summary(consump3_lme7)
+plot_model(consump3_lme7, type = "diag")
+
+consump3_lme8 <- update(consump3_lme7,~. -factor(day))
+summary(consump3_lme8)
+
+AICc(consump3_lme1,consump3_lme2,consump3_lme3,consump3_lme4,consump3_lme5,consump3_lme6,consump3_lme7,consump3_lme8)
+consump3_lme <-  lmer(log(consumption)~factor(day)+(1|id), data = consump3)
+rm(consump3_lme1,consump3_lme2,consump3_lme3,consump3_lme4,consump3_lme5,consump3_lme6,consump3_lme7,consump3_lme8)
+
+summary(consump3_lme)
+tab_model(consump3_lme,
+          p.val = "kr",
+          file = "model_summaries/Consumption_Exp_3.html")
+
+get_variance(consump3_lme)
 # ---- Mass Experiment 1 ----
 
 mass1_lm1 <- lm(f_total~mass_diff*fungus, data = mass1) # plot full model
