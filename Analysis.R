@@ -140,6 +140,7 @@ tab_model(consump2_lme,
 # ---- Consumption Exp 3 ----
 
 
+
 # ---- Mass Experiment 1 ----
 
 mass1_lm1 <- lm(f_total~mass_diff*fungus, data = mass1) # plot full model
