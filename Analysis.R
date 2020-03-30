@@ -22,6 +22,13 @@ exp3 <- read_csv("exp2_effective_f.csv", na = "na") # Modified Exp 2 dataset so 
 
 # ---- Data tidying ----
 
+survival1 <- exp1 %>%
+  select(-mass_i, -mass_f, -f0, -f1, -f2, -f3, -f4) # survival data of interest in exp1
+
+survival2 <- exp2 %>%
+  filter(feeding == "constant") %>%
+  select(-f0, -f1, -f2, -f3, -f4) # survival data of interest in exp2
+
 consump1 <- exp1 %>%
   gather(key = "day", value = "consumption", f0:f4) %>%
   separate(day,into=c("junk", "day"),-1) %>% 
@@ -44,8 +51,29 @@ mass1$f_total <- mass1$f0+mass1$f1+mass1$f2+mass1$f3+mass1$f4 # get total mass o
 # --- Survival Exp 1 ----
 
 
+
 # ---- Survival Exp 2 ----
 
+cox2 <- coxph(Surv(survival, censored) ~ fungus*method, data = survival2) # build max model
+summary(cox2) # interaction not significant
+
+cox2.1 <- update(cox2,~. -fungus:method) # remove interaction term
+summary(cox2.1) # suspect that this is best model due to high significance and effect sizes
+
+cox2.2 <- update(cox2.1,~. -method) # try remove method
+summary(cox2.2) # much worse
+
+cox2.3 <- update(cox2.1,~. -fungus) # try remove fungus
+summary(cox2.3) # not much worse but still think 2.1 is best
+
+AICc(cox2,cox2.1,cox2.2,cox2.3) # check with AICc
+
+survmod2 <- cox2.1 # save for ease
+rm(cox2,cox2.1,cox2.2,cox2.3) # remove
+
+tab_model(survmod2,
+          p.val = "kr",
+          file = "model_summaries/Survival_Experiment_2.html") # output model summary
 
 # ---- Survival Exp 3 ----
 
