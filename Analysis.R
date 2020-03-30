@@ -29,6 +29,10 @@ survival2 <- exp2 %>%
   filter(feeding == "constant") %>%
   select(-f0, -f1, -f2, -f3, -f4) # survival data of interest in exp2
 
+survival3 <- exp2 %>%
+  filter(method == "spray") %>%
+  select(-f0, -f1, -f2, -f3, -f4) # survival data of interest in exp3
+
 consump1 <- exp1 %>%
   gather(key = "day", value = "consumption", f0:f4) %>%
   separate(day,into=c("junk", "day"),-1) %>% 
@@ -77,6 +81,23 @@ tab_model(survmod2,
 
 # ---- Survival Exp 3 ----
 
+cox3 <- coxph(Surv(survival, censored) ~ fungus*feeding, data = survival3) # max model
+summary(cox3) # nothing sig
+
+cox3.1 <- update(cox3,~. - fungus:feeding) # remove interaction
+summary(cox3.1)
+
+cox3.2 <- update(cox3.1,~. -fungus) # remove fungus
+summary(cox3.2) # nothing sig
+
+cox3.3 <- update(cox3.2,~. -feeding) # null model
+summary(cox3.3)
+
+survival3result<-AICc(cox3,cox3.1,cox3.2,cox3.3) # no effect, as best model is 3.3
+survival3result <- tibble::rownames_to_column(survival3result, "Model") # add model names (should probably replace with model code)
+
+tab_df(survival3result,
+       file = "model_summaries/Suvival_Experiement_3.html") # output AICc values
 
 # ---- Consumption Exp 1 ----
 
