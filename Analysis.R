@@ -54,6 +54,32 @@ mass1$f_total <- mass1$f0+mass1$f1+mass1$f2+mass1$f3+mass1$f4 # get total mass o
 
 # --- Survival Exp 1 ----
 
+cox1 <- coxph(Surv(survival, censored) ~ fungus*factor(spore), data = survival1) # build max model
+summary(cox1) # nothing sig
+
+cox1.1 <- update(cox1,~. -fungus:factor(spore))
+summary(cox1.1)
+
+cox1.2 <- update(cox1.1,~. -factor(spore))
+summary(cox1.2)
+
+cox1.3 <- update(cox1.1,~. -fungus)
+summary(cox1.3)
+
+cox1.4 <- update(cox1.2,~. -fungus)
+summary(cox1.4)
+
+survival1result <- AICc(cox1,cox1.1,cox1.2,cox1.3,cox1.4)
+survival1result <- tibble::rownames_to_column(survival1result, "Model") # add model names
+                          "fungus*spore" = "cox1",
+                          "fungus+spore" = "cox1.1",
+                          "fungus" = "cox1.2",
+                          "spore" = "cox1.3",
+                          "none" = "cox1.4") # add helpful names
+tab_df(survival1result,
+       file = "model_summaries/Suvival_Experiment_1.html")
+
+rm(cox1,cox1.1,cox1.2,cox1.3,cox1.4)
 
 
 # ---- Survival Exp 2 ----
@@ -72,10 +98,10 @@ summary(cox2.3) # not much worse but still think 2.1 is best
 
 AICc(cox2,cox2.1,cox2.2,cox2.3) # check with AICc
 
-survmod2 <- cox2.1 # save for ease
+survival2result <- cox2.1 # save for ease
 rm(cox2,cox2.1,cox2.2,cox2.3) # remove
 
-tab_model(survmod2,
+tab_model(survival2result,
           p.val = "kr",
           file = "model_summaries/Survival_Experiment_2.html") # output model summary
 
@@ -90,14 +116,24 @@ summary(cox3.1)
 cox3.2 <- update(cox3.1,~. -fungus) # remove fungus
 summary(cox3.2) # nothing sig
 
-cox3.3 <- update(cox3.2,~. -feeding) # null model
+cox3.3 <- update(cox3.1,~. -feeding)
 summary(cox3.3)
 
-survival3result<-AICc(cox3,cox3.1,cox3.2,cox3.3) # no effect, as best model is 3.3
-survival3result <- tibble::rownames_to_column(survival3result, "Model") # add model names (should probably replace with model code)
+cox3.4 <- update(cox3.3,~. -fungus)
+summary(cox3.4)
 
+survival3result<-AICc(cox3,cox3.1,cox3.2,cox3.3,cox3.4) # no effect, as best model is 3.3
+survival3result <- tibble::rownames_to_column(survival3result, "Model") # add model names
+survival3result$Model <- fct_recode(survival3result$Model,
+                                    "fungus*feeding" = "cox3",
+                                    "fungus+feeding" = "cox3.1",
+                                    "feeding" = "cox3.2",
+                                    "fungus" = "cox3.3",
+                                    "none" = "cox3.4") # helpful names
 tab_df(survival3result,
        file = "model_summaries/Suvival_Experiement_3.html") # output AICc values
+
+rm(cox3,cox3.1,cox3.2,cox3.3,cox3.4)
 
 # ---- Consumption Exp 1 ----
 
