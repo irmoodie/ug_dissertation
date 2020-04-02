@@ -252,12 +252,12 @@ ggsave("Survival_Experiment_3.png",
 
 # ---- Mass Plot Exp 1 ----
 
-ggmass1 <- ggplot(data = mass1, aes(x = mass_diff, y = f_total)) +
+ggmass1 <- ggplot(data = mass1, aes(x = f_total, y = mass_diff)) +
   geom_point(alpha = 0.5, aes(group = fungus, colour = fungus)) +
   geom_smooth(method = lm, formula = y~x, alpha = 0.1, linetype = "solid", colour = "red") +
   scale_color_manual(values=c("#f1a340","#998ec3")) +
-  labs(y = "Total Food Consumption (mg)",
-       x = "Change in larvae mass (mg)") +
+  labs(y = "Change in larvae mass (mg)",
+       x = "Total Food Consumption (mg)") +
   theme_cowplot() +
   theme(legend.position = "none")
 

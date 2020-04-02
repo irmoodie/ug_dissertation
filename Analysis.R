@@ -149,6 +149,7 @@ hist(log(consump1$consumption)) # log most promising transformation
 
 consump1_lme1 <- lmer(log(consumption)~factor(day)*scale(spore)*fungus+(1|id), data = consump1) # maximum model
 summary(consump1_lme1)
+tab_model(consump1_lme1)
 plot_model(consump1_lme1, type = "diag")
 
 consump1_lme2 <- update(consump1_lme1,~. -factor(day):fungus)
@@ -276,22 +277,36 @@ tab_model(consump3_lme,
 
 # ---- Mass Experiment 1 ----
 
-mass1_lm1 <- lm(f_total~mass_diff*fungus, data = mass1) # plot full model
+mass1_lm1 <- lm(mass_diff~f_total*fungus*spore, data = mass1) # plot full model
 summary(mass1_lm1) # doesnt seem to be effect of fungus or interaction
 plot_model(mass1_lm1, type = "diag") # diag seems ok
 
-mass1_lm2 <- update(mass1_lm1,~. -mass_diff:fungus) # remove interaction
+mass1_lm2 <- update(mass1_lm1,~. -f_total:fungus:spore) # remove interaction
 summary(mass1_lm2) # std, error of fungus is huge
 plot_model(mass1_lm2, type = "diag") # diag seems better
 
-mass1_lm3 <- update(mass1_lm2,~. -fungus) # remove fungus
+mass1_lm3 <- update(mass1_lm2,~. -fungus:spore) # remove fungus
 summary(mass1_lm3) # all sig with decent effect size of mass_diff - most likely best model
 plot_model(mass1_lm3, type = "diag") # all fine
 
-AIC(mass1_lm1,mass1_lm2,mass1_lm3) # confirm with AIC (AIC confirms lm3)
+mass1_lm4 <- update(mass1_lm3,~. -f_total:spore)
+summary(mass1_lm4)
 
-mass_model <- mass1_lm3 # id model for ease
-rm(mass1_lm1,mass1_lm2,mass1_lm3) # remove candidate models
+mass1_lm5 <- update(mass1_lm4,~. -f_total:fungus)
+summary(mass1_lm5)
+
+mass1_lm6 <- update(mass1_lm5,~. -spore)
+summary(mass1_lm6)
+
+mass1_lm7 <- update(mass1_lm6,~. -fungus)
+summary(mass1_lm7)
+
+
+
+AIC(mass1_lm1,mass1_lm2,mass1_lm3,mass1_lm4,mass1_lm5,mass1_lm6,mass1_lm7) # confirm with AIC
+
+mass_model <- mass1_lm7 # id model for ease
+rm(mass1_lm1,mass1_lm2,mass1_lm3,mass1_lm4,mass1_lm5,mass1_lm6,mass1_lm7) # remove candidate models
 
 tab_model(mass_model,
           p.val = "kr",
