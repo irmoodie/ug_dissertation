@@ -12,6 +12,7 @@ library(survival) # survival objects
 library(lme4) # mixed models
 library(MuMIn) # AICc
 library(sjPlot) # diagnostics and table outputs
+library(glmmTMB)
 library(tidyverse) # the good stuff
 
 # ---- Data Import ----
@@ -25,13 +26,20 @@ exp3 <- read_csv("exp2_effective_f.csv", na = "na") # Modified Exp 2 dataset so 
 survival1 <- exp1 %>%
   select(-mass_i, -mass_f, -f0, -f1, -f2, -f3, -f4) # survival data of interest in exp1
 
+survival1$fungus <- factor(survival1$fungus, levels = c("dead", "alive")) # match order with previous graphs
+
 survival2 <- exp2 %>%
   filter(feeding == "constant") %>%
   select(-f0, -f1, -f2, -f3, -f4) # survival data of interest in exp2
 
+survival2$fungus <- factor(survival2$fungus, levels = c("control", "alive")) # match order with previous graphs
+
 survival3 <- exp2 %>%
   filter(method == "spray") %>%
   select(-f0, -f1, -f2, -f3, -f4) # survival data of interest in exp3
+
+survival3$fungus <- factor(survival3$fungus, levels = c("control", "alive")) # match order with previous graphs
+
 
 consump1 <- exp1 %>%
   gather(key = "day", value = "consumption", f0:f4) %>%
@@ -39,12 +47,16 @@ consump1 <- exp1 %>%
   mutate(day = as.numeric(day)) %>%
   select(-mass_i, -mass_f, -junk, -survival, -censored) # transform consumption data from wide to long format
 
+consump1$fungus <- factor(consump1$fungus, levels = c("dead", "alive")) # match order with previous graphs
+
 consump2 <- gather(exp2, key = "day", value = "consumption", f0:f4) %>%
   separate(day,into=c("junk", "day"),-1) %>% 
   mutate(day = as.numeric(day)) %>%
-  select(-junk, -survival, -censored) %>%
+  select(-junk, -censored, -survival) %>%
   filter(feeding == "constant",
          day != 4) # wide to long for exp 2, day 4 removed as no values in 1 treatment
+
+consump2$fungus <- factor(consump2$fungus, levels = c("control", "alive")) # match order with previous graphs
 
 consump3 <- gather(exp3, key = "day", value = "consumption", f0:f4) %>%
   separate(day,into=c("junk", "day"),-1) %>% 
@@ -52,11 +64,17 @@ consump3 <- gather(exp3, key = "day", value = "consumption", f0:f4) %>%
   select(-junk, -survival, -censored) %>%
   filter(method == "spray", day != 3, day != 4)
 
+consump3$fungus <- factor(consump3$fungus, levels = c("control", "alive")) # match order with previous graphs
+
+
 mass1 <- exp1 %>%
   select(-survival, -censored, -label) # make mass dataset
 
 mass1$mass_diff <- mass1$mass_f-mass1$mass_i # get change in mass
 mass1$f_total <- mass1$f0+mass1$f1+mass1$f2+mass1$f3+mass1$f4 # get total mass of food consumed
+
+mass1$fungus <- factor(mass1$fungus, levels = c("dead", "alive")) # match order with previous graphs
+
 
 # --- Survival Exp 1 ----
 
@@ -147,20 +165,31 @@ rm(cox3,cox3.1,cox3.2,cox3.3,cox3.4)
 hist(consump1$consumption) # skewed
 hist(log(consump1$consumption)) # log most promising transformation
 
-consump1_lme1 <- lmer(log(consumption)~factor(day)*scale(spore)*fungus+(1|id), data = consump1) # maximum model
+# log vs norm
+consump1_lme1 <- lmer(log(consumption)~factor(day)*factor(spore)*fungus+(1|id), data = consump1) # maximum model
 summary(consump1_lme1)
 tab_model(consump1_lme1)
-plot_model(consump1_lme1, type = "diag")
+p <- plot_model(consump1_lme1, type = "diag")
+p[[2]] <- p[[2]]$id
+pplot <- plot_grid(p)
+
+ggsave("logConsumption_Experiment_1_diag.png",
+             plot = pplot,
+             path = "model_summaries",
+             dpi = "retina", 
+             width = 20,
+             height = 16,
+             type = "cairo")
 
 consump1_lme2 <- update(consump1_lme1,~. -factor(day):fungus)
 summary(consump1_lme2)
 plot_model(consump1_lme2, type = "diag")
 
-consump1_lme3 <- update(consump1_lme2,~. -factor(day):scale(spore))
+consump1_lme3 <- update(consump1_lme2,~. -factor(day):factor(spore))
 summary(consump1_lme3)
 plot_model(consump1_lme3, type = "diag")
 
-consump1_lme4 <- update(consump1_lme3,~. -scale(spore):fungus)
+consump1_lme4 <- update(consump1_lme3,~. -factor(spore):fungus)
 summary(consump1_lme4)
 plot_model(consump1_lme4, type = "diag")
 
@@ -168,11 +197,11 @@ consump1_lme5 <- update(consump1_lme4,~. -fungus)
 summary(consump1_lme5)
 plot_model(consump1_lme5, type = "diag")
 
-consump1_lme6 <- update(consump1_lme5,~. -scale(spore))
+consump1_lme6 <- update(consump1_lme5,~. -factor(spore))
 summary(consump1_lme6)
 plot_model(consump1_lme6, type = "diag")
 
-consump1_lme7 <- update(consump1_lme6,~. -factor(day):scale(spore):fungus)
+consump1_lme7 <- update(consump1_lme6,~. -factor(day):factor(spore):fungus)
 summary(consump1_lme7)
 plot_model(consump1_lme7, type = "diag") # really not fantasitc, but the data convinces me that there is no effect of fungus or spore anayway
 
@@ -187,12 +216,22 @@ tab_model(consump1_lme,
 
 # ---- Consumption Exp 2 ----
 
-hist(consump2$consumption)
-hist(log(consump2$consumption)) # bit better
+hist(consump2$consumption, breaks = 20)
+hist(log(consump2$consumption), breaks = 20) # bit better
 
 consump2_lme1 <- lmer(log(consumption)~factor(day)*method*fungus+(1|id), data = consump2)
 summary(consump2_lme1)
-plot_model(consump2_lme1, type = "diag")
+q <- plot_model(consump2_lme1, type = "diag")
+q[[2]] <- q[[2]]$id
+qplot <- plot_grid(q)
+
+ggsave("Consumption_Experiment_2_diag.png",
+       plot = qplot,
+       path = "model_summaries",
+       dpi = "retina", 
+       width = 20,
+       height = 16,
+       type = "cairo")
 
 consump2_lme2 <- update(consump2_lme1,~. -factor(day):method:fungus)
 summary(consump2_lme2)
@@ -230,14 +269,48 @@ tab_model(consump2_lme,
           p.val = "kr",
           file = "model_summaries/Consumption_Exp_2.html")
 
+# ---- 2 GLMM ----
+glmm1 <- glmmTMB(consumption~factor(day)*method*fungus+(1|id), data = consump2, family = Gamma(link = "inverse"))
+summary(glmm1)
+
+numcols <- grep("^c\\.",names(glmm1))
+glmm1s <- glmm1
+glmm1s <- scale(glmm1s)
+m1_sc <- update(m1,data=dfs)
+
+tab_model(glmm1)
+
+library("DHARMa")
+check_gamma_model <- simulateResiduals(fittedModel = glmm1, n = 500)
+plot(check_gamma_model)
+
+sim_glmm1 <- simulate(glmm1, nsim = 100)
+sim_glmm1 <- do.call(cbind, sim_glmm1)
+head(sim_glmm1)
+sim_res_glmm1 <- createDHARMa(simulatedResponse = sim_glmm1,
+                              observedResponse = consump2$consumption,
+                              fittedPredictedResponse = predict(glmm1),
+                              integerResponse = TRUE)
+
+
 # ---- Consumption Exp 3 ----
 
 hist(consump3$consumption)
 hist(log(consump3$consumption))
 
-consump3_lme1 <- lmer(log(consumption)~factor(day)*feeding*fungus+(1|id), data = consump3) # max model
+consump3_lme1 <- lmer(consumption~factor(day)*feeding*fungus+(1|id), data = consump3) # max model
 summary(consump3_lme1) # will try removing 3 way interaction
-plot_model(consump3_lme1, type = "diag") # not amazing but ok
+s <- plot_model(consump3_lme1, type = "diag") # not amazing but ok
+s[[2]] <- s[[2]]$id
+splot <- plot_grid(s)
+
+ggsave("Consumption_Experiment_3_diag.png",
+       plot = splot,
+       path = "model_summaries",
+       dpi = "retina", 
+       width = 20,
+       height = 16,
+       type = "cairo")
 
 consump3_lme2 <- update(consump3_lme1,~. -factor(day):feeding:fungus)
 summary(consump3_lme2)
@@ -311,5 +384,10 @@ rm(mass1_lm1,mass1_lm2,mass1_lm3,mass1_lm4,mass1_lm5,mass1_lm6,mass1_lm7) # remo
 tab_model(mass_model,
           p.val = "kr",
           file = "model_summaries/Mass_Experiment_1.html") # output as html table
+
+# ---- Agar Experiment ----
+
+agar <- prop.test(x = c(0, 6), n = c(9, 9))
+agar
 
 # ---- End ----
