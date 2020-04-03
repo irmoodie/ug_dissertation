@@ -19,7 +19,7 @@ library(tidyverse) # the good stuff
 exp1 <- read_csv("exp1.csv", na = "na") # Experiment 1 dataset
 exp2 <- read_csv("exp2.csv", na = "na") # Experiment 2 dataset
 exp3 <- read_csv("exp2_effective_f.csv", na = "na") # Modified Exp 2 dataset so day is now equal to feeding day so a day where no food was give is not counted (gave up trying to do this in R so done manually)
-
+agar <- read_csv("agarplateresults.csv", na = "na")
 # ---- Data tidying ----
 
 consump1 <- gather(exp1, key = "day", value = "consumption", f0:f4) %>%
@@ -76,6 +76,11 @@ mass1 <- exp1 %>%
 
 mass1$mass_diff <- mass1$mass_f-mass1$mass_i
 mass1$f_total <- mass1$f0+mass1$f1+mass1$f2+mass1$f3+mass1$f4
+
+agar$treatment <- factor(agar$treatment, levels = c("control", "dead", "alive")) # change order
+agar$result <- factor(agar$result) %>%
+  fct_recode("no growth" = "0", "growth" = "1")
+agar$treatment <- fct_recode(agar$treatment,"control" = "control", "heat treated" = "dead", "live" = "alive")
 
 rm(exp1, exp2, exp3) # remove original datasets
 
@@ -267,6 +272,25 @@ ggsave("Mass_Experiment_1.png",
        dpi = "retina",
        width = 8,
        height = 8,
+       type = "cairo")
+
+# ---- Agar Plates ----
+
+ggagar <- ggplot(data = agar, aes(x = treatment)) +
+  geom_bar(aes(fill = result)) +
+  scale_fill_manual(values=c("#998ec3", "#f1a340")) +
+  scale_y_continuous(expand = expand_scale(mult = c(0, 0.05)), 
+                     breaks = seq(from = 0, to = 9, by = 2)) +
+  theme_half_open() +
+  theme(axis.title.x=element_blank()) +
+  theme(legend.position = "bottom", legend.title = element_blank())
+
+ggsave("Agar_Plot.png",
+       plot = ggagar,
+       path = "figs",
+       dpi = "retina",
+       width = 6,
+       height = 6,
        type = "cairo")
 
 # ---- End ----
